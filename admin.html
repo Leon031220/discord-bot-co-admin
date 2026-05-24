@@ -1,0 +1,1078 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Panel – Co-Admin Bot</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0d1117;color:#e6edf3;font-family:'Segoe UI',sans-serif;min-height:100vh}
+header{background:#161b22;border-bottom:1px solid #30363d;padding:14px 28px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+header h1{font-size:18px;color:#58a6ff;font-weight:700}
+.hbadges{display:flex;gap:20px;align-items:center}
+.badge{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:#8b949e;background:#0d1117;border:1px solid #21262d;border-radius:20px;padding:4px 10px}
+.dot{width:7px;height:7px;border-radius:50%;background:#3fb950;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* TABS */
+.tabs{display:flex;gap:0;border-bottom:1px solid #30363d;padding:0 28px;background:#161b22}
+.tab{padding:10px 18px;font-size:14px;font-weight:500;cursor:pointer;color:#8b949e;border-bottom:2px solid transparent;transition:all .15s;white-space:nowrap}
+.tab:hover{color:#e6edf3}
+.tab.active{color:#58a6ff;border-bottom-color:#58a6ff}
+
+.content{display:none;padding:24px 28px;max-width:1200px;margin:0 auto}
+.content.active{display:block}
+
+/* CARDS */
+.grid{display:grid;gap:16px}
+.g2{grid-template-columns:1fr 1fr}
+.g3{grid-template-columns:1fr 1fr 1fr}
+.g4{grid-template-columns:repeat(4,1fr)}
+@media(max-width:900px){.g2,.g3,.g4{grid-template-columns:1fr 1fr}}
+@media(max-width:600px){.g2,.g3,.g4{grid-template-columns:1fr}}
+.card{background:#161b22;border:1px solid #30363d;border-radius:12px;padding:20px}
+.card h3{font-size:12px;font-weight:600;color:#8b949e;text-transform:uppercase;letter-spacing:.06em;margin-bottom:14px}
+
+/* STAT CARDS */
+.stat-val{font-size:36px;font-weight:700;color:#e6edf3;line-height:1}
+.stat-sub{font-size:12px;color:#8b949e;margin-top:4px}
+.stat-good{color:#3fb950}
+.stat-blue{color:#58a6ff}
+
+/* FORMS */
+.fg{margin-bottom:10px}
+.fg label{display:block;font-size:12px;color:#8b949e;margin-bottom:4px}
+input,textarea,select{background:#0d1117;border:1px solid #30363d;border-radius:7px;color:#e6edf3;padding:7px 11px;font-size:13px;width:100%;outline:none;transition:border .15s;font-family:inherit}
+input:focus,textarea:focus,select:focus{border-color:#58a6ff}
+input[type=range]{padding:0;height:20px;accent-color:#58a6ff}
+.row{display:flex;gap:8px;align-items:flex-end}
+.row .fg{flex:1;margin-bottom:0}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:5px;padding:7px 14px;border-radius:7px;border:none;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;white-space:nowrap}
+.btn-sm{padding:4px 10px;font-size:12px}
+.btn-p{background:#1f6feb;color:#fff}.btn-p:hover{background:#388bfd}
+.btn-g{background:#238636;color:#fff}.btn-g:hover{background:#2ea043}
+.btn-r{background:#da3633;color:#fff}.btn-r:hover{background:#f85149}
+.btn-y{background:#9e6a03;color:#fff}.btn-y:hover{background:#bb8009}
+.btn-s{background:#21262d;color:#e6edf3;border:1px solid #30363d}.btn-s:hover{background:#30363d}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+
+/* LISTS */
+.item-list{max-height:300px;overflow-y:auto;display:flex;flex-direction:column;gap:5px;margin-top:8px}
+.item{display:flex;align-items:center;gap:8px;background:#0d1117;border:1px solid #21262d;border-radius:7px;padding:7px 11px;font-size:13px}
+.item .iname{flex:1;font-weight:500}
+.item .irate{color:#8b949e;font-size:12px}
+.item .idel{background:none;border:none;color:#f85149;cursor:pointer;font-size:15px;padding:0 2px;line-height:1}
+
+/* BAR CHART */
+.bar-row{display:flex;align-items:center;gap:8px;margin-bottom:5px;font-size:12px}
+.bar-label{width:160px;text-overflow:ellipsis;overflow:hidden;white-space:nowrap;color:#8b949e;flex-shrink:0}
+.bar-track{flex:1;background:#21262d;border-radius:4px;height:14px;overflow:hidden}
+.bar-fill{height:100%;background:#1f6feb;border-radius:4px;transition:width .4s}
+.bar-pct{width:36px;text-align:right;color:#8b949e}
+
+/* QUEUE */
+.q-item{display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:7px;font-size:13px;background:#0d1117;border:1px solid #21262d;margin-bottom:5px}
+.q-num{color:#8b949e;font-size:12px;width:18px;flex-shrink:0}
+
+/* LOG */
+.log-box{background:#0d1117;border:1px solid #21262d;border-radius:8px;padding:12px;max-height:340px;overflow-y:auto;font-family:monospace;font-size:12px;line-height:1.7}
+.log-box .log-line{color:#8b949e}
+.log-box .log-line:last-child{color:#e6edf3}
+
+/* MUSIC */
+.now-playing{background:#0d1117;border:1px solid #21262d;border-radius:8px;padding:14px;margin-bottom:12px}
+.np-title{font-weight:600;font-size:15px;color:#e6edf3}
+.np-sub{font-size:12px;color:#8b949e;margin-top:3px}
+
+/* EVENT STATUS */
+.event-pill{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:20px;font-size:13px;font-weight:600}
+.event-on{background:#0d1f0d;border:1px solid #238636;color:#3fb950}
+.event-off{background:#1c1c1c;border:1px solid #30363d;color:#8b949e}
+
+/* PREVIEW */
+.preview-box{background:#0d1117;border:1px solid #30363d;border-radius:8px;padding:14px;margin-top:10px;font-size:13px}
+.tag{display:inline-block;background:#1f6feb22;color:#58a6ff;border-radius:4px;padding:2px 7px;font-size:11px;margin:2px}
+
+/* DIVIDER */
+hr{border:none;border-top:1px solid #21262d;margin:14px 0}
+
+/* TOAST */
+.toast{position:fixed;bottom:24px;right:24px;padding:11px 18px;border-radius:8px;font-size:13px;font-weight:600;z-index:999;transform:translateX(200%);transition:transform .3s;max-width:320px}
+.toast.show{transform:translateX(0)}
+.toast.ok{background:#238636;color:#fff}
+.toast.err{background:#da3633;color:#fff}
+.toast.info{background:#1f6feb;color:#fff}
+
+/* SERVER CARD */
+.srv{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:#0d1117;border:1px solid #21262d;border-radius:8px;font-size:13px;margin-bottom:6px}
+.srv .sname{font-weight:600}
+.srv .smem{color:#8b949e;font-size:12px}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🤖 Co-Admin Admin Panel</h1>
+  <div class="hbadges">
+    <span class="badge"><div class="dot"></div> <span id="h-status">Online</span></span>
+    <span class="badge" id="h-lat">⏱ -- ms</span>
+    <span class="badge" id="h-guilds">🏠 -- Server</span>
+    <span class="badge" id="h-event">📡 Kein Event</span>
+  </div>
+</header>
+
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('overview')">📊 Übersicht</div>
+  <div class="tab" onclick="switchTab('machine')">🎰 Admin Machine</div>
+  <div class="tab" onclick="switchTab('brainrots')">🧠 Brainrots</div>
+  <div class="tab" onclick="switchTab('traits')">✨ Traits</div>
+  <div class="tab" onclick="switchTab('events')">🎉 Events & Boosts</div>
+  <div class="tab" onclick="switchTab('music')">🎵 Musik</div>
+  <div class="tab" onclick="switchTab('chat')">💬 Discord Chat</div>
+  <div class="tab" onclick="switchTab('update')">🚀 Updates</div>
+  <div class="tab" onclick="switchTab('log')">📋 Log</div>
+</div>
+
+<!-- ===== ÜBERSICHT ===== -->
+<div class="content active" id="tab-overview">
+  <div class="grid g4" style="margin-bottom:16px">
+    <div class="card">
+      <h3>Latenz</h3>
+      <div class="stat-val stat-good" id="ov-lat">--</div>
+      <div class="stat-sub">ms</div>
+    </div>
+    <div class="card">
+      <h3>Server</h3>
+      <div class="stat-val stat-blue" id="ov-guilds">--</div>
+      <div class="stat-sub">verbunden</div>
+    </div>
+    <div class="card">
+      <h3>Commands</h3>
+      <div class="stat-val" id="ov-cmds">--</div>
+      <div class="stat-sub">registriert</div>
+    </div>
+    <div class="card">
+      <h3>Brainrots</h3>
+      <div class="stat-val" id="ov-brs">--</div>
+      <div class="stat-sub">in der Liste</div>
+    </div>
+  </div>
+
+  <div class="grid g2">
+    <div class="card">
+      <h3>Verbundene Server</h3>
+      <div id="srv-list"><div style="color:#8b949e;font-size:13px">Lade...</div></div>
+    </div>
+    <div class="card">
+      <h3>Schnellaktionen</h3>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <button class="btn btn-p" onclick="spawnNow()">🎰 Admin Machine spawnen</button>
+        <button class="btn btn-g" onclick="switchTab('machine')">⚙️ Spawn-Einstellungen</button>
+        <button class="btn btn-y" id="ov-event-btn" onclick="toggleEvent()">📡 Event starten</button>
+        <button class="btn btn-r" onclick="musicAction('stop')">⏹ Musik stoppen</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== ADMIN MACHINE ===== -->
+<div class="content" id="tab-machine">
+  <div class="grid g2">
+    <div class="card">
+      <h3>Spawn Steuerung</h3>
+      <div style="font-size:13px;color:#8b949e;margin-bottom:10px">Postet automatisch alle 6 Stunden in deinen Channel</div>
+      <div style="font-size:14px;color:#3fb950;margin-bottom:14px" id="m-next">⏳ Lade...</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-p" onclick="spawnNow()">🎰 Jetzt spawnen</button>
+        <button class="btn btn-s" onclick="previewMachine()">👁 Vorschau</button>
+      </div>
+      <div class="preview-box" id="m-preview" style="display:none;margin-top:12px"></div>
+    </div>
+    <div class="card">
+      <h3>Einstellungen</h3>
+      <div class="fg"><label>Spawn-Stunden (kommagetrennt)</label><input id="m-hours" value="0,6,12,18" placeholder="0,6,12,18"></div>
+      <div class="fg"><label>Channel ID</label><input id="m-channel" placeholder="z.B. 1234567890123456789"></div>
+      <button class="btn btn-g" onclick="saveSettings()" style="margin-top:4px">💾 Speichern</button>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:16px">
+    <h3>Event Cycle</h3>
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
+      <span class="event-pill event-off" id="ev-pill">● Kein Event aktiv</span>
+    </div>
+    <div class="grid g3">
+      <div class="fg"><label>Dauer (Minuten)</label><input id="ev-dur" type="number" value="60" min="1"></div>
+      <div class="fg"><label>Intervall (Minuten)</label><input id="ev-int" type="number" value="10" min="1"></div>
+      <div style="display:flex;align-items:flex-end;gap:8px;padding-bottom:1px">
+        <button class="btn btn-y" id="ev-start-btn" onclick="startEvent()">🚀 Starten</button>
+        <button class="btn btn-r" onclick="stopEvent()">🛑 Stoppen</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== BRAINROTS ===== -->
+<div class="content" id="tab-brainrots">
+  <div class="grid g2">
+    <div class="card">
+      <h3>Brainrot hinzufügen</h3>
+      <div class="fg"><label>Name</label><input id="br-name" placeholder="z.B. Crystal Elephant"></div>
+      <div class="fg"><label>Rate (%)</label><input id="br-rate" type="number" placeholder="5" min="0.1" step="0.1"></div>
+      <button class="btn btn-g" onclick="addBrainrot()">➕ Hinzufügen</button>
+    </div>
+    <div class="card">
+      <h3>Verteilung (Top 10)</h3>
+      <div id="br-chart"></div>
+    </div>
+  </div>
+  <div class="card" style="margin-top:16px">
+    <h3>Alle Brainrots (<span id="br-count">0</span>)</h3>
+    <input id="br-search" placeholder="🔍 Suchen..." style="margin-bottom:10px" oninput="filterBrainrots()">
+    <div class="item-list" id="br-list"></div>
+  </div>
+</div>
+
+<!-- ===== TRAITS ===== -->
+<div class="content" id="tab-traits">
+  <div class="grid g2">
+    <div class="card">
+      <h3>Trait hinzufügen</h3>
+      <div class="fg"><label>Name</label><input id="tr-name" placeholder="z.B. Crystal"></div>
+      <div class="fg"><label>Multiplikator (×)</label><input id="tr-mult" type="number" placeholder="2.5" step="0.1" min="0.1"></div>
+      <div class="fg"><label>Rate (%)</label><input id="tr-rate" type="number" placeholder="5" step="0.1" min="0.1"></div>
+      <button class="btn btn-g" onclick="addTrait()">➕ Hinzufügen</button>
+    </div>
+    <div class="card">
+      <h3>Trait Verteilung</h3>
+      <div id="tr-chart"></div>
+    </div>
+  </div>
+  <div class="card" style="margin-top:16px">
+    <h3>Alle Traits (<span id="tr-count">0</span>)</h3>
+    <div class="item-list" id="tr-list"></div>
+  </div>
+</div>
+
+<!-- ===== EVENTS & BOOSTS ===== -->
+<div class="content" id="tab-events">
+  <div class="grid g2">
+    <div class="card">
+      <h3>🎉 Event-Typen</h3>
+      <div class="row" style="margin-bottom:12px">
+        <div class="fg"><label>Name</label><input id="ev-name" placeholder="z.B. Rainbow"></div>
+        <div class="fg"><label>Rate (%)</label><input id="ev-rate" type="number" placeholder="10" style="width:90px"></div>
+        <button class="btn btn-g btn-sm" onclick="addEventItem()" style="align-self:flex-end">➕</button>
+      </div>
+      <div class="item-list" id="ev-list"></div>
+    </div>
+    <div class="card">
+      <h3>⚡ Boosts</h3>
+      <div class="row" style="margin-bottom:12px">
+        <div class="fg"><label>Name</label><input id="bo-name" placeholder="z.B. 2x Luck"></div>
+        <div class="fg"><label>Rate (%)</label><input id="bo-rate" type="number" placeholder="20" style="width:90px"></div>
+        <button class="btn btn-g btn-sm" onclick="addBoost()" style="align-self:flex-end">➕</button>
+      </div>
+      <div class="item-list" id="bo-list"></div>
+    </div>
+  </div>
+
+  <!-- Discord Scheduled Events -->
+  <div class="card" style="margin-top:16px">
+    <h3>📅 Discord Events (Server-Events)</h3>
+    <div class="grid g2" style="gap:12px;margin-bottom:16px">
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div class="fg"><label>Event Name</label><input id="dse-name" placeholder="z.B. Community Night"></div>
+        <div class="fg"><label>Beschreibung</label><textarea id="dse-desc" placeholder="Kurze Beschreibung..." style="min-height:55px;resize:vertical"></textarea></div>
+        <div class="fg"><label>Startzeit</label><input id="dse-start" type="datetime-local"></div>
+        <div class="fg"><label>Ort / Location</label><input id="dse-loc" placeholder="z.B. Discord Voice / Twitch" value="Discord"></div>
+        <button class="btn btn-g" onclick="createDiscordEvent()">📅 Event erstellen</button>
+      </div>
+      <div>
+        <div style="font-size:12px;color:#8b949e;margin-bottom:8px;font-weight:600">GEPLANTE EVENTS</div>
+        <div id="dse-list" style="display:flex;flex-direction:column;gap:8px">
+          <div style="color:#8b949e;font-size:13px">Lade...</div>
+        </div>
+        <button class="btn btn-s btn-sm" onclick="loadDiscordEvents()" style="margin-top:10px">🔄 Aktualisieren</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== DISCORD CHAT ===== -->
+<div class="content" id="tab-chat">
+  <div style="display:grid;grid-template-columns:260px 1fr 220px;gap:14px;height:calc(100vh - 160px)">
+
+    <!-- LEFT SIDEBAR: Channels + Voice -->
+    <div style="display:flex;flex-direction:column;gap:8px;overflow-y:auto;min-width:0">
+      <div class="card" style="flex-shrink:0;padding:12px">
+        <h3 style="margin-bottom:8px">🎙 Voice</h3>
+        <div id="vc-list" style="font-size:12px;color:#8b949e">Lade...</div>
+      </div>
+      <div class="card" style="flex:1;overflow:hidden;display:flex;flex-direction:column;padding:12px">
+        <h3 style="margin-bottom:6px"># Channels</h3>
+        <div id="ch-list" style="overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:2px"></div>
+      </div>
+      <div class="card" style="flex-shrink:0;padding:12px">
+        <h3 style="margin-bottom:8px">🎵 Web Play</h3>
+        <input id="wp-search" placeholder="Song oder URL..." style="margin-bottom:6px">
+        <select id="wp-vc" style="margin-bottom:6px"></select>
+        <button class="btn btn-p" onclick="playFromWeb()" style="width:100%">▶ Abspielen</button>
+        <div id="wp-result" style="font-size:11px;color:#8b949e;margin-top:4px"></div>
+      </div>
+    </div>
+
+    <!-- CHAT AREA -->
+    <div class="card" style="display:flex;flex-direction:column;padding:0;overflow:hidden;min-width:0">
+      <!-- Header -->
+      <div style="padding:12px 16px;border-bottom:1px solid #21262d;display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
+        <div>
+          <span style="font-weight:700;font-size:14px" id="chat-title"># Kanal auswählen</span>
+          <span style="font-size:11px;color:#8b949e;margin-left:8px" id="chat-sub">← Wähle einen Channel</span>
+        </div>
+        <div style="display:flex;gap:6px;align-items:center">
+          <button class="btn btn-sm" style="background:#21262d;color:#e6edf3;font-size:11px" onclick="openClearModal()">🗑 Clear</button>
+          <button class="btn btn-sm" style="background:#21262d;color:#e6edf3;font-size:11px" onclick="openEmbedModal()">📦 Embed</button>
+          <button class="btn btn-s btn-sm" onclick="fetchMessages()">🔄</button>
+        </div>
+      </div>
+
+      <!-- Reply bar -->
+      <div id="reply-bar" style="display:none;padding:6px 16px;background:#161b22;border-bottom:1px solid #21262d;font-size:12px;color:#8b949e;display:none;align-items:center;gap:8px">
+        <span>↩️ Antwort an: <span id="reply-author" style="color:#58a6ff"></span></span>
+        <button onclick="cancelReply()" style="background:none;border:none;color:#f85149;cursor:pointer;font-size:13px">✕</button>
+      </div>
+
+      <!-- Messages -->
+      <div id="chat-messages" style="flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:8px">
+        <div style="text-align:center;color:#8b949e;font-size:13px;margin-top:40px">Wähle einen Channel aus</div>
+      </div>
+
+      <!-- Input bar -->
+      <div style="padding:10px 14px;border-top:1px solid #21262d;display:flex;gap:6px;flex-shrink:0">
+        <input id="chat-input" placeholder="Nachricht eingeben... (Enter = Senden)" style="flex:1;font-size:13px" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChatMessage()}" disabled>
+        <button class="btn btn-sm" style="background:#21262d;color:#e6edf3" onclick="openDMModal()" title="DM senden">✉</button>
+        <button class="btn btn-p" onclick="sendChatMessage()" id="chat-send" disabled style="padding:6px 14px">Senden</button>
+      </div>
+    </div>
+
+    <!-- RIGHT SIDEBAR: Members -->
+    <div class="card" style="display:flex;flex-direction:column;padding:12px;overflow:hidden;min-width:0">
+      <h3 style="margin-bottom:6px">👥 Mitglieder</h3>
+      <input id="member-search" placeholder="🔍 Suchen..." style="font-size:12px;margin-bottom:8px" oninput="filterMembers()">
+      <div id="member-list" style="overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:4px;font-size:12px">
+        <div style="color:#8b949e">Lade...</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- DM Modal -->
+<div id="dm-modal" style="display:none;position:fixed;inset:0;background:#000a;z-index:999;display:none;align-items:center;justify-content:center">
+  <div class="card" style="width:420px;padding:20px">
+    <h3>✉ DM senden</h3>
+    <div class="fg"><label>User</label>
+      <select id="dm-user" style="margin-bottom:8px"></select>
+    </div>
+    <div class="fg"><label>Nachricht</label>
+      <textarea id="dm-content" placeholder="Deine DM..." style="min-height:80px;resize:vertical"></textarea>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:10px">
+      <button class="btn btn-p" onclick="sendDM()" style="flex:1">Senden</button>
+      <button class="btn btn-s" onclick="closeDMModal()" style="flex:1">Abbrechen</button>
+    </div>
+  </div>
+</div>
+
+<!-- Embed Modal -->
+<div id="embed-modal" style="display:none;position:fixed;inset:0;background:#000a;z-index:999;display:none;align-items:center;justify-content:center">
+  <div class="card" style="width:480px;padding:20px">
+    <h3>📦 Embed senden</h3>
+    <div class="fg"><label>Titel</label><input id="emb-title" placeholder="Embed Titel"></div>
+    <div class="fg"><label>Inhalt</label><textarea id="emb-desc" placeholder="Embed Inhalt..." style="min-height:70px;resize:vertical"></textarea></div>
+    <div class="grid g2" style="gap:8px">
+      <div class="fg"><label>Farbe</label>
+        <select id="emb-color">
+          <option value="blue">🔵 Blau</option><option value="green">🟢 Grün</option>
+          <option value="red">🔴 Rot</option><option value="gold">🟡 Gold</option>
+          <option value="purple">🟣 Lila</option><option value="orange">🟠 Orange</option>
+        </select>
+      </div>
+      <div class="fg"><label>Bild URL (optional)</label><input id="emb-img" placeholder="https://..."></div>
+    </div>
+    <div class="fg"><label>Footer (optional)</label><input id="emb-footer" placeholder="Footer Text"></div>
+    <div style="display:flex;gap:8px;margin-top:10px">
+      <button class="btn btn-p" onclick="sendEmbed()" style="flex:1">📤 Senden</button>
+      <button class="btn btn-s" onclick="closeEmbedModal()" style="flex:1">Abbrechen</button>
+    </div>
+  </div>
+</div>
+
+<!-- Clear Modal -->
+<div id="clear-modal" style="display:none;position:fixed;inset:0;background:#000a;z-index:999;display:none;align-items:center;justify-content:center">
+  <div class="card" style="width:360px;padding:20px">
+    <h3>🗑 Nachrichten löschen</h3>
+    <div class="fg"><label>Anzahl (max 100)</label><input id="clear-amount" type="number" value="10" min="1" max="100"></div>
+    <div style="font-size:12px;color:#f85149;margin-bottom:12px">⚠️ Dies löscht Nachrichten im aktuellen Channel unwiderruflich!</div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-r" onclick="clearMessages()" style="flex:1">🗑 Löschen</button>
+      <button class="btn btn-s" onclick="closeClearModal()" style="flex:1">Abbrechen</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MUSIK ===== -->
+<div class="content" id="tab-music">
+  <div class="grid g2">
+    <div class="card">
+      <h3>Jetzt spielt</h3>
+      <div class="now-playing" id="mu-now">
+        <div class="np-title">Kein Song aktiv</div>
+        <div class="np-sub">Nutze /play im Discord</div>
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:16px">
+        <button class="btn btn-y" onclick="musicAction('skip')" style="flex:1">⏭ Skip</button>
+        <button class="btn btn-r" onclick="musicAction('stop')" style="flex:1">⏹ Stop</button>
+      </div>
+      <hr>
+      <div class="fg" style="margin-top:14px">
+        <label>Lautstärke: <span id="vol-val">50</span>%</label>
+        <input type="range" id="vol-slider" min="0" max="200" value="50" oninput="updateVolLabel()" onchange="setVolume()">
+      </div>
+    </div>
+    <div class="card">
+      <h3>Warteschlange</h3>
+      <div id="mu-queue"><div style="color:#8b949e;font-size:13px">Queue ist leer</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== UPDATES ===== -->
+<div class="content" id="tab-update">
+  <div class="grid g2">
+    <div class="card">
+      <h3>Update posten</h3>
+      <div class="fg"><label>Version</label><input id="up-version" placeholder="z.B. 1.2.0"></div>
+      <div class="fg"><label>Text</label><textarea id="up-text" rows="4" placeholder="Was ist neu in dieser Version?"></textarea></div>
+      <div class="fg"><label>Bild-URL (optional)</label><input id="up-image" placeholder="https://..."></div>
+      <button class="btn btn-g" onclick="postUpdate()">📢 In Discord posten</button>
+    </div>
+    <div class="card">
+      <h3>Vorschau</h3>
+      <div style="font-size:12px;color:#8b949e;margin-bottom:10px">So sieht das Update in Discord aus:</div>
+      <div style="background:#36393f;border-radius:8px;padding:14px;border-left:4px solid #3fb950">
+        <div style="font-weight:700;color:#fff;margin-bottom:6px" id="prev-title">🚀 UPDATE v?.?.? 🚀</div>
+        <div style="color:#dcddde;font-size:13px;white-space:pre-wrap" id="prev-text">Kein Text</div>
+        <div style="margin-top:10px;font-size:11px;color:#8b949e">@everyone</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== LOG ===== -->
+<div class="content" id="tab-log">
+  <div class="card">
+    <h3 style="display:flex;align-items:center;justify-content:space-between">
+      Activity Log
+      <button class="btn btn-s btn-sm" onclick="loadLog()">🔄 Aktualisieren</button>
+    </h3>
+    <div class="log-box" id="log-box">Lade Log...</div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ===== UTILS =====
+function toast(msg, type='ok') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = `toast ${type} show`;
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+async function api(url, method='GET', body=null) {
+  const o = { method, headers: {'Content-Type':'application/json'} };
+  if (body) o.body = JSON.stringify(body);
+  const r = await fetch(url, o);
+  return r.json();
+}
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
+  const tabs = ['overview','machine','brainrots','traits','events','music','chat','update','log'];
+  const idx = tabs.indexOf(name);
+  document.querySelectorAll('.tab')[idx].classList.add('active');
+  document.getElementById('tab-'+name).classList.add('active');
+  if (name === 'brainrots') loadBrainrots();
+  if (name === 'traits') loadTraits();
+  if (name === 'events') { loadEventItems(); loadBoosts(); loadDiscordEvents(); }
+  if (name === 'music') { loadCurrentSong(); loadQueue(); }
+  if (name === 'chat') loadChannels();
+  if (name === 'log') loadLog();
+}
+
+// ===== STATUS =====
+async function loadStatus() {
+  try {
+    const d = await api('/api/bot_status');
+    document.getElementById('ov-lat').textContent = d.latency;
+    document.getElementById('ov-guilds').textContent = d.guilds;
+    document.getElementById('ov-cmds').textContent = d.commands;
+    document.getElementById('h-lat').textContent = `⏱ ${d.latency} ms`;
+    document.getElementById('h-guilds').textContent = `🏠 ${d.guilds} Server`;
+  } catch(e) {}
+}
+async function loadServers() {
+  try {
+    const d = await api('/api/get_servers');
+    const box = document.getElementById('srv-list');
+    if (!d.servers.length) { box.innerHTML = '<div style="color:#8b949e;font-size:13px">Keine Server</div>'; return; }
+    box.innerHTML = d.servers.map(s => `<div class="srv"><div><div class="sname">${s.name}</div><div class="smem">${s.members} Mitglieder</div></div><div style="font-size:11px;color:#8b949e">${s.id}</div></div>`).join('');
+  } catch(e) {}
+}
+async function loadEventStatus() {
+  try {
+    const d = await api('/api/event_status');
+    const pill = document.getElementById('ev-pill');
+    const hbadge = document.getElementById('h-event');
+    const ovbtn = document.getElementById('ov-event-btn');
+    if (d.running) {
+      pill.className = 'event-pill event-on'; pill.textContent = '● Event läuft';
+      hbadge.textContent = '📡 Event aktiv';
+      ovbtn.textContent = '🛑 Event stoppen'; ovbtn.onclick = stopEvent;
+    } else {
+      pill.className = 'event-pill event-off'; pill.textContent = '● Kein Event aktiv';
+      hbadge.textContent = '📡 Kein Event';
+      ovbtn.textContent = '📡 Event starten'; ovbtn.onclick = () => switchTab('machine');
+    }
+  } catch(e) {}
+}
+async function loadNextSpawn() {
+  try {
+    const d = await api('/api/next_spawn');
+    const el = document.getElementById('m-next');
+    if (el) el.textContent = `⏳ Nächster Spawn: ${d.next_spawn}`;
+  } catch(e) {}
+}
+
+// ===== MACHINE =====
+async function spawnNow() {
+  const d = await api('/api/spawn_admin_machine', 'POST');
+  if (d.status==='success') toast(`🎰 Gespawnt: ${d.brainrot}`);
+  else toast('Fehler beim Spawnen', 'err');
+}
+async function previewMachine() {
+  const d = await api('/api/preview_machine', 'POST');
+  const box = document.getElementById('m-preview');
+  box.style.display = 'block';
+  box.innerHTML = `<strong>🧠 ${d.brainrot}</strong> &nbsp;|&nbsp; 🎉 ${d.event} &nbsp;|&nbsp; ⚡ ${d.boost}<br><br>` +
+    d.traits.map(t => `<span class="tag">${t[0]} ×${t[1]}</span>`).join('');
+}
+async function saveSettings() {
+  const hours = document.getElementById('m-hours').value;
+  const ch = document.getElementById('m-channel').value.trim();
+  const tasks = [api('/api/set_spawn_times','POST',{hours})];
+  if (ch) tasks.push(api('/api/set_channel','POST',{channel_id:ch}));
+  await Promise.all(tasks);
+  toast('✅ Einstellungen gespeichert!');
+  loadNextSpawn();
+}
+
+// ===== EVENTS =====
+async function startEvent() {
+  const dur = parseInt(document.getElementById('ev-dur').value);
+  const int_ = parseInt(document.getElementById('ev-int').value);
+  const d = await api('/api/start_event','POST',{duration:dur,interval:int_});
+  if (d.status==='success') { toast('📡 Event gestartet!'); loadEventStatus(); }
+  else toast(d.message||'Fehler','err');
+}
+async function stopEvent() {
+  const d = await api('/api/stop_event','POST');
+  if (d.status==='success') { toast('🛑 Event gestoppt'); loadEventStatus(); }
+  else toast(d.message||'Fehler','err');
+}
+function toggleEvent() { startEvent(); }
+
+// ===== BRAINROTS =====
+let allBrainrots = [];
+async function loadBrainrots() {
+  try {
+    const d = await api('/api/get_brainrots');
+    allBrainrots = d.brainrots.sort((a,b)=>b.rate-a.rate);
+    document.getElementById('br-count').textContent = allBrainrots.length;
+    document.getElementById('ov-brs').textContent = allBrainrots.length;
+    renderBrainrotList(allBrainrots);
+    renderBarChart('br-chart', allBrainrots.slice(0,10), '#1f6feb');
+  } catch(e) {}
+}
+function renderBrainrotList(list) {
+  const el = document.getElementById('br-list');
+  el.innerHTML = list.length ? list.map(b=>`<div class="item"><span class="iname">${b.name}</span><span class="irate">${b.rate}%</span><button class="idel" onclick="removeBrainrot('${b.name.replace(/'/g,"\\'")}')">🗑</button></div>`).join('') : '<div style="color:#8b949e;font-size:13px;padding:10px">Leer</div>';
+}
+function filterBrainrots() {
+  const q = document.getElementById('br-search').value.toLowerCase();
+  renderBrainrotList(allBrainrots.filter(b=>b.name.toLowerCase().includes(q)));
+}
+async function addBrainrot() {
+  const name = document.getElementById('br-name').value.trim();
+  const rate = parseFloat(document.getElementById('br-rate').value);
+  if (!name||isNaN(rate)) { toast('Name und Rate eingeben!','err'); return; }
+  const d = await api('/api/add_brainrot','POST',{name,rate});
+  if (d.status==='success') { toast(`✅ ${name} hinzugefügt`); document.getElementById('br-name').value=''; document.getElementById('br-rate').value=''; loadBrainrots(); }
+  else toast('Fehler','err');
+}
+async function removeBrainrot(name) {
+  const d = await api('/api/remove_brainrot','POST',{name});
+  if (d.status==='success') { toast(`🗑 ${name} entfernt`); loadBrainrots(); }
+  else toast('Fehler','err');
+}
+
+// ===== TRAITS =====
+async function loadTraits() {
+  try {
+    const d = await api('/api/get_traits');
+    const sorted = d.traits.sort((a,b)=>b.rate-a.rate);
+    document.getElementById('tr-count').textContent = sorted.length;
+    const el = document.getElementById('tr-list');
+    el.innerHTML = sorted.map(t=>`<div class="item"><span class="iname">${t.name}</span><span class="irate" style="margin-right:8px">×${t.mult}</span><span class="irate">${t.rate}%</span><button class="idel" onclick="removeTrait('${t.name.replace(/'/g,"\\'")}')">🗑</button></div>`).join('');
+    renderBarChart('tr-chart', sorted.slice(0,8).map(t=>({name:t.name,rate:t.rate})), '#9e6a03');
+  } catch(e) {}
+}
+async function addTrait() {
+  const name = document.getElementById('tr-name').value.trim();
+  const mult = parseFloat(document.getElementById('tr-mult').value);
+  const rate = parseFloat(document.getElementById('tr-rate').value);
+  if (!name||isNaN(mult)||isNaN(rate)) { toast('Alle Felder ausfüllen!','err'); return; }
+  const d = await api('/api/add_trait','POST',{name,mult,rate});
+  if (d.status==='success') { toast(`✅ Trait ${name} hinzugefügt`); document.getElementById('tr-name').value=''; document.getElementById('tr-mult').value=''; document.getElementById('tr-rate').value=''; loadTraits(); }
+  else toast('Fehler','err');
+}
+async function removeTrait(name) {
+  const d = await api('/api/remove_trait','POST',{name});
+  if (d.status==='success') { toast(`🗑 ${name} entfernt`); loadTraits(); }
+  else toast('Fehler','err');
+}
+
+// ===== EVENTS LIST =====
+async function loadEventItems() {
+  try {
+    const d = await api('/api/get_events_list');
+    const el = document.getElementById('ev-list');
+    el.innerHTML = d.events.map(e=>`<div class="item"><span class="iname">${e.name}</span><span class="irate">${e.rate}%</span><button class="idel" onclick="removeEventItem('${e.name.replace(/'/g,"\\'")}')">🗑</button></div>`).join('');
+  } catch(e) {}
+}
+async function addEventItem() {
+  const name = document.getElementById('ev-name').value.trim();
+  const rate = parseFloat(document.getElementById('ev-rate').value);
+  if (!name||isNaN(rate)) { toast('Felder ausfüllen!','err'); return; }
+  const d = await api('/api/add_event_item','POST',{name,rate});
+  if (d.status==='success') { toast(`✅ ${name} hinzugefügt`); document.getElementById('ev-name').value=''; document.getElementById('ev-rate').value=''; loadEventItems(); }
+  else toast('Fehler','err');
+}
+async function removeEventItem(name) {
+  await api('/api/remove_event_item','POST',{name});
+  toast(`🗑 ${name} entfernt`); loadEventItems();
+}
+
+// ===== BOOSTS =====
+async function loadBoosts() {
+  try {
+    const d = await api('/api/get_boosts');
+    const el = document.getElementById('bo-list');
+    el.innerHTML = d.boosts.map(b=>`<div class="item"><span class="iname">${b.name}</span><span class="irate">${b.rate}%</span><button class="idel" onclick="removeBoost('${b.name.replace(/'/g,"\\'")}')">🗑</button></div>`).join('');
+  } catch(e) {}
+}
+async function addBoost() {
+  const name = document.getElementById('bo-name').value.trim();
+  const rate = parseFloat(document.getElementById('bo-rate').value);
+  if (!name||isNaN(rate)) { toast('Felder ausfüllen!','err'); return; }
+  const d = await api('/api/add_boost','POST',{name,rate});
+  if (d.status==='success') { toast(`✅ ${name} hinzugefügt`); document.getElementById('bo-name').value=''; document.getElementById('bo-rate').value=''; loadBoosts(); }
+  else toast('Fehler','err');
+}
+async function removeBoost(name) {
+  await api('/api/remove_boost','POST',{name});
+  toast(`🗑 ${name} entfernt`); loadBoosts();
+}
+
+// ===== MUSIK =====
+async function loadCurrentSong() {
+  try {
+    const d = await api('/api/current_song');
+    const box = document.getElementById('mu-now');
+    if (d.title) box.innerHTML = `<div class="np-title">🎵 ${d.title}</div><div class="np-sub">Angefragt von: ${d.requester||'?'}</div>`;
+    else box.innerHTML = `<div class="np-title">Kein Song aktiv</div><div class="np-sub">Nutze /play im Discord</div>`;
+  } catch(e) {}
+}
+async function loadQueue() {
+  try {
+    const d = await api('/api/get_queue');
+    const el = document.getElementById('mu-queue');
+    if (!d.queue.length) { el.innerHTML = '<div style="color:#8b949e;font-size:13px">Queue ist leer</div>'; return; }
+    el.innerHTML = d.queue.map((s,i)=>`<div class="q-item"><span class="q-num">${i+1}</span><span>${s.title}</span><span style="font-size:11px;color:#8b949e;margin-left:auto">${s.requester}</span></div>`).join('');
+  } catch(e) {}
+}
+async function musicAction(a) {
+  const d = await api(`/api/music_${a}`,'POST');
+  if (d.status==='success') toast(a==='skip'?'⏭ Übersprungen':'⏹ Gestoppt');
+  else toast(d.message||'Kein Song aktiv','err');
+  loadCurrentSong(); loadQueue();
+}
+function updateVolLabel() { document.getElementById('vol-val').textContent = document.getElementById('vol-slider').value; }
+async function setVolume() {
+  const level = parseInt(document.getElementById('vol-slider').value);
+  const d = await api('/api/set_volume','POST',{level});
+  if (d.status==='success') toast(`🔊 Lautstärke: ${level}%`);
+}
+
+// ===== UPDATE =====
+async function postUpdate() {
+  const version = document.getElementById('up-version').value.trim();
+  const text = document.getElementById('up-text').value.trim();
+  const image_url = document.getElementById('up-image').value.trim();
+  if (!version||!text) { toast('Version und Text angeben!','err'); return; }
+  const d = await api('/api/post_update','POST',{version,text,image_url});
+  if (d.status==='success') { toast('🚀 Update gepostet!'); document.getElementById('up-version').value=''; document.getElementById('up-text').value=''; document.getElementById('up-image').value=''; updatePreview(); }
+  else toast(d.message||'Fehler','err');
+}
+function updatePreview() {
+  const v = document.getElementById('up-version').value||'?.?.?';
+  const t = document.getElementById('up-text').value||'Kein Text';
+  document.getElementById('prev-title').textContent = `🚀 UPDATE v${v} 🚀`;
+  document.getElementById('prev-text').textContent = t;
+}
+document.addEventListener('input', e => { if(['up-version','up-text'].includes(e.target.id)) updatePreview(); });
+
+// ===== LOG =====
+async function loadLog() {
+  try {
+    const d = await api('/api/activity_log');
+    const el = document.getElementById('log-box');
+    el.innerHTML = d.log.length ? d.log.map(l=>`<div class="log-line">${l}</div>`).join('') : '<div style="color:#8b949e">Noch keine Aktivität</div>';
+  } catch(e) {}
+}
+
+// ===== BAR CHART =====
+function renderBarChart(id, items, color) {
+  const el = document.getElementById(id);
+  if (!items.length) { el.innerHTML = '<div style="color:#8b949e;font-size:12px">Keine Daten</div>'; return; }
+  const max = Math.max(...items.map(i=>i.rate));
+  el.innerHTML = items.map(i=>`<div class="bar-row"><span class="bar-label" title="${i.name}">${i.name}</span><div class="bar-track"><div class="bar-fill" style="width:${(i.rate/max*100).toFixed(1)}%;background:${color}"></div></div><span class="bar-pct">${i.rate}%</span></div>`).join('');
+}
+
+// ===== DISCORD CHAT =====
+let activeChatChannel = null;
+let chatPollInterval = null;
+let replyToId = null;
+let replyToAuthor = null;
+let allMembers = [];
+
+async function loadChannels() {
+  try {
+    const [chanData, memberData] = await Promise.all([
+      api('/api/get_channels'),
+      api('/api/get_members')
+    ]);
+    allMembers = memberData.members || [];
+    renderMemberList(allMembers);
+
+    const chList = document.getElementById('ch-list');
+    const vcList = document.getElementById('vc-list');
+    const wpVc = document.getElementById('wp-vc');
+    chList.innerHTML = ''; vcList.innerHTML = '';
+    wpVc.innerHTML = '<option value="">Auto (jemand im VC)</option>';
+
+    chanData.servers.forEach(srv => {
+      const hdr = document.createElement('div');
+      hdr.style.cssText = 'font-size:10px;font-weight:700;color:#8b949e;text-transform:uppercase;padding:8px 4px 2px;letter-spacing:.06em';
+      hdr.textContent = srv.guild;
+      chList.appendChild(hdr);
+
+      srv.channels.forEach(ch => {
+        if (ch.type === 'text') {
+          const el = document.createElement('div');
+          el.style.cssText = 'padding:4px 8px;border-radius:4px;cursor:pointer;font-size:12px;color:#8b949e;transition:all .1s';
+          el.textContent = '# ' + ch.name;
+          el.dataset.id = ch.id; el.dataset.name = ch.name;
+          el.onmouseover = () => { if(activeChatChannel!==ch.id){el.style.background='#21262d';el.style.color='#e6edf3';} };
+          el.onmouseout = () => { if(activeChatChannel!==ch.id){el.style.background='';el.style.color='#8b949e';} };
+          el.onclick = () => selectChannel(ch.id, ch.name);
+          chList.appendChild(el);
+        } else if (ch.type === 'voice') {
+          const el = document.createElement('div');
+          el.style.cssText = 'font-size:11px;color:#8b949e;padding:2px 2px';
+          el.textContent = `🔊 ${ch.name}${ch.members.length?' ('+ch.members.join(', ')+')':''}`;
+          vcList.appendChild(el);
+          const opt = document.createElement('option');
+          opt.value = ch.id; opt.textContent = `${srv.guild} / ${ch.name}`;
+          wpVc.appendChild(opt);
+        }
+      });
+    });
+    if (!vcList.children.length) vcList.innerHTML = '<span style="color:#8b949e">Kein Voice aktiv</span>';
+
+    // Populate DM user select
+    const dmUser = document.getElementById('dm-user');
+    dmUser.innerHTML = allMembers.filter(m=>!m.bot).map(m => `<option value="${m.id}">${m.name}</option>`).join('');
+  } catch(e) { console.error(e); }
+}
+
+function renderMemberList(members) {
+  const list = document.getElementById('member-list');
+  const q = (document.getElementById('member-search')||{}).value||'';
+  const filtered = members.filter(m => m.name.toLowerCase().includes(q.toLowerCase()));
+  list.innerHTML = filtered.map(m => `
+    <div style="display:flex;align-items:center;gap:6px;padding:3px 0;cursor:pointer" onclick="quickDM('${m.id}','${m.name.replace(/'/g,'')}')" title="DM senden">
+      <img src="${m.avatar}" onerror="this.style.display='none'" style="width:22px;height:22px;border-radius:50%;background:#21262d;flex-shrink:0">
+      <div style="min-width:0">
+        <div style="font-size:12px;color:${m.bot?'#5865f2':'#e6edf3'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${m.name}${m.bot?' 🤖':''}</div>
+        ${m.roles.length?`<div style="font-size:10px;color:#8b949e;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${m.roles.slice(0,2).join(', ')}</div>`:''}
+      </div>
+    </div>`).join('') || '<div style="color:#8b949e">Keine Mitglieder</div>';
+}
+
+function filterMembers() { renderMemberList(allMembers); }
+
+function quickDM(userId, name) {
+  document.getElementById('dm-user').value = userId;
+  openDMModal();
+}
+
+function selectChannel(id, name) {
+  activeChatChannel = id;
+  document.getElementById('chat-title').textContent = '# ' + name;
+  document.getElementById('chat-sub').textContent = 'Lädt...';
+  document.getElementById('chat-input').disabled = false;
+  document.getElementById('chat-send').disabled = false;
+  document.querySelectorAll('#ch-list div[data-id]').forEach(e => {
+    e.style.background = e.dataset.id === id ? '#1f6feb22' : '';
+    e.style.color = e.dataset.id === id ? '#58a6ff' : '#8b949e';
+  });
+  cancelReply();
+  fetchMessages();
+  if (chatPollInterval) clearInterval(chatPollInterval);
+  chatPollInterval = setInterval(pollMessages, 3000);
+}
+
+async function fetchMessages() {
+  if (!activeChatChannel) return;
+  const d = await api('/api/fetch_messages', 'POST', {channel_id: activeChatChannel});
+  if (d.status === 'success') renderMessages(d.messages);
+}
+
+async function pollMessages() {
+  if (!activeChatChannel) return;
+  const d = await api('/api/get_messages?channel_id=' + activeChatChannel);
+  renderMessages(d.messages);
+}
+
+function renderMessages(msgs) {
+  const box = document.getElementById('chat-messages');
+  const wasBottom = box.scrollHeight - box.scrollTop - box.clientHeight < 80;
+  document.getElementById('chat-sub').textContent = `${msgs.length} Nachrichten · Auto-Refresh`;
+  const REACTIONS = ['👍','❤️','😂','🔥','🎉','😮','👀'];
+  box.innerHTML = msgs.length ? msgs.map(m => `
+    <div class="msg-row" style="display:flex;gap:8px;align-items:flex-start;padding:4px 6px;border-radius:6px;position:relative" onmouseover="this.querySelector('.msg-actions').style.opacity='1'" onmouseout="this.querySelector('.msg-actions').style.opacity='0'">
+      <img src="${m.avatar||''}" onerror="this.style.display='none'" style="width:30px;height:30px;border-radius:50%;flex-shrink:0;background:#21262d">
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;align-items:baseline;gap:6px">
+          <span style="font-weight:700;font-size:12px;color:${m.bot?'#5865f2':'#e6edf3'}">${escHtml(m.author)}${m.bot?' 🤖':''}</span>
+          <span style="font-size:10px;color:#8b949e">${m.time}</span>
+        </div>
+        <div style="font-size:13px;color:#dcddde;margin-top:1px;word-break:break-word;line-height:1.4">${escHtml(m.content)}</div>
+      </div>
+      <div class="msg-actions" style="opacity:0;transition:opacity .1s;display:flex;gap:3px;flex-shrink:0;align-items:flex-start">
+        <button onclick="setReply('${m.id}','${escAttr(m.author)}')" style="background:#21262d;border:none;color:#8b949e;cursor:pointer;padding:3px 6px;border-radius:4px;font-size:11px" title="Antworten">↩</button>
+        <div style="position:relative;display:inline-block">
+          <button onclick="toggleReactionMenu('rm-${m.id}')" style="background:#21262d;border:none;color:#8b949e;cursor:pointer;padding:3px 6px;border-radius:4px;font-size:11px" title="Reagieren">😊</button>
+          <div id="rm-${m.id}" style="display:none;position:absolute;right:0;top:100%;background:#161b22;border:1px solid #30363d;border-radius:8px;padding:6px;display:none;gap:4px;z-index:10;white-space:nowrap">
+            ${REACTIONS.map(e=>`<span onclick="addReaction('${m.id}','${e}');toggleReactionMenu('rm-${m.id}')" style="cursor:pointer;font-size:16px;padding:2px 3px;border-radius:4px" onmouseover="this.style.background='#21262d'" onmouseout="this.style.background=''">${e}</span>`).join('')}
+          </div>
+        </div>
+        <button onclick="deleteMsg('${m.id}')" style="background:#21262d;border:none;color:#f85149;cursor:pointer;padding:3px 6px;border-radius:4px;font-size:11px" title="Löschen">🗑</button>
+        <button onclick="pinMsg('${m.id}')" style="background:#21262d;border:none;color:#8b949e;cursor:pointer;padding:3px 6px;border-radius:4px;font-size:11px" title="Anpinnen">📌</button>
+      </div>
+    </div>`).join('') : '<div style="text-align:center;color:#8b949e;font-size:13px;margin-top:30px">Keine Nachrichten</div>';
+  if (wasBottom) box.scrollTop = box.scrollHeight;
+}
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
+}
+function escAttr(s) {
+  return String(s).replace(/'/g,'').replace(/"/g,'');
+}
+
+function toggleReactionMenu(id) {
+  const el = document.getElementById(id);
+  const isOpen = el.style.display === 'flex';
+  document.querySelectorAll('[id^="rm-"]').forEach(e => e.style.display='none');
+  el.style.display = isOpen ? 'none' : 'flex';
+}
+
+function setReply(msgId, author) {
+  replyToId = msgId; replyToAuthor = author;
+  const bar = document.getElementById('reply-bar');
+  bar.style.display = 'flex';
+  document.getElementById('reply-author').textContent = author;
+  document.getElementById('chat-input').focus();
+  document.getElementById('chat-input').placeholder = `Antworte an ${author}...`;
+}
+
+function cancelReply() {
+  replyToId = null; replyToAuthor = null;
+  const bar = document.getElementById('reply-bar');
+  if (bar) bar.style.display = 'none';
+  const inp = document.getElementById('chat-input');
+  if (inp) inp.placeholder = 'Nachricht eingeben... (Enter = Senden)';
+}
+
+async function addReaction(msgId, emoji) {
+  const d = await api('/api/add_reaction', 'POST', {channel_id: activeChatChannel, message_id: msgId, emoji});
+  if (d.status !== 'success') toast(d.message || 'Fehler', 'err');
+}
+
+async function deleteMsg(msgId) {
+  if (!confirm('Nachricht löschen?')) return;
+  const d = await api('/api/delete_message', 'POST', {channel_id: activeChatChannel, message_id: msgId});
+  if (d.status === 'success') { toast('Gelöscht'); setTimeout(fetchMessages, 400); }
+  else toast(d.message || 'Fehler', 'err');
+}
+
+async function pinMsg(msgId) {
+  const d = await api('/api/pin_message', 'POST', {channel_id: activeChatChannel, message_id: msgId});
+  if (d.status === 'success') toast('📌 Angepinnt!');
+  else toast(d.message || 'Fehler', 'err');
+}
+
+async function sendChatMessage() {
+  const input = document.getElementById('chat-input');
+  const content = input.value.trim();
+  if (!content || !activeChatChannel) return;
+  let msg = content;
+  if (replyToAuthor) msg = `↩️ **${replyToAuthor}:** ${msg}`;
+  input.value = '';
+  cancelReply();
+  const d = await api('/api/send_message', 'POST', {channel_id: activeChatChannel, content: msg});
+  if (d.status === 'success') { setTimeout(fetchMessages, 500); }
+  else toast(d.message || 'Fehler beim Senden', 'err');
+}
+
+// DM Modal
+function openDMModal() { document.getElementById('dm-modal').style.display='flex'; }
+function closeDMModal() { document.getElementById('dm-modal').style.display='none'; }
+async function sendDM() {
+  const userId = document.getElementById('dm-user').value;
+  const content = document.getElementById('dm-content').value.trim();
+  if (!content) { toast('Inhalt fehlt!', 'err'); return; }
+  const d = await api('/api/send_dm', 'POST', {user_id: userId, content});
+  if (d.status === 'success') { toast('✉ DM gesendet!'); closeDMModal(); document.getElementById('dm-content').value=''; }
+  else toast(d.message || 'Fehler', 'err');
+}
+
+// Embed Modal
+function openEmbedModal() {
+  if (!activeChatChannel) { toast('Kanal auswählen!', 'err'); return; }
+  document.getElementById('embed-modal').style.display='flex';
+}
+function closeEmbedModal() { document.getElementById('embed-modal').style.display='none'; }
+async function sendEmbed() {
+  const title = document.getElementById('emb-title').value.trim();
+  const desc = document.getElementById('emb-desc').value.trim();
+  if (!title && !desc) { toast('Titel oder Inhalt erforderlich!', 'err'); return; }
+  const d = await api('/api/send_embed', 'POST', {
+    channel_id: activeChatChannel, title, description: desc,
+    color: document.getElementById('emb-color').value,
+    image_url: document.getElementById('emb-img').value,
+    footer: document.getElementById('emb-footer').value
+  });
+  if (d.status === 'success') { toast('📦 Embed gesendet!'); closeEmbedModal(); setTimeout(fetchMessages, 500); }
+  else toast(d.message || 'Fehler', 'err');
+}
+
+// Clear Modal
+function openClearModal() {
+  if (!activeChatChannel) { toast('Kanal auswählen!', 'err'); return; }
+  document.getElementById('clear-modal').style.display='flex';
+}
+function closeClearModal() { document.getElementById('clear-modal').style.display='none'; }
+async function clearMessages() {
+  const amount = parseInt(document.getElementById('clear-amount').value) || 10;
+  const d = await api('/api/clear_messages', 'POST', {channel_id: activeChatChannel, amount});
+  if (d.status === 'success') { toast(`🗑 ${d.deleted} Nachrichten gelöscht!`); closeClearModal(); setTimeout(fetchMessages, 800); }
+  else toast(d.message || 'Fehler', 'err');
+}
+
+async function playFromWeb() {
+  const search = document.getElementById('wp-search').value.trim();
+  const vcId = document.getElementById('wp-vc').value;
+  if (!search) { toast('Song eingeben!', 'err'); return; }
+  const btn = document.querySelector('[onclick="playFromWeb()"]');
+  btn.disabled = true; btn.textContent = '⏳ Lädt...';
+  const d = await api('/api/play_web', 'POST', {search, voice_channel_id: vcId||null});
+  btn.disabled = false; btn.textContent = '▶ Abspielen';
+  const res = document.getElementById('wp-result');
+  if (d.status === 'success') { toast('🎵 ' + d.message); res.textContent = '✅ ' + d.message; res.style.color='#3fb950'; }
+  else { res.textContent = '❌ ' + d.message; res.style.color='#f85149'; }
+}
+
+// ===== DISCORD EVENTS =====
+async function loadDiscordEvents() {
+  const d = await api('/api/get_discord_events');
+  const list = document.getElementById('dse-list');
+  if (!list) return;
+  list.innerHTML = d.events.length ? d.events.map(ev => `
+    <div style="background:#161b22;border:1px solid #30363d;border-radius:8px;padding:10px 14px;display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
+      <div>
+        <div style="font-weight:700;font-size:13px;color:#e6edf3">📅 ${escHtml(ev.name)}</div>
+        <div style="font-size:11px;color:#8b949e;margin-top:2px">🕐 ${ev.start} · ${ev.guild} · ${ev.status}</div>
+        ${ev.description?`<div style="font-size:12px;color:#8b949e;margin-top:4px">${escHtml(ev.description)}</div>`:''}
+      </div>
+      <button onclick="deleteDiscordEvent('${ev.id}')" style="background:#21262d;border:none;color:#f85149;cursor:pointer;padding:3px 8px;border-radius:4px;font-size:11px;flex-shrink:0">🗑</button>
+    </div>`).join('') : '<div style="color:#8b949e;font-size:13px">Keine geplanten Events</div>';
+}
+
+async function createDiscordEvent() {
+  const name = document.getElementById('dse-name').value.trim();
+  const desc = document.getElementById('dse-desc').value.trim();
+  const start = document.getElementById('dse-start').value;
+  const loc = document.getElementById('dse-loc').value.trim() || 'Discord';
+  if (!name || !start) { toast('Name und Startzeit erforderlich!', 'err'); return; }
+  const guildId = bot_guilds[0];
+  const d = await api('/api/create_discord_event', 'POST', {name, description: desc, start, location: loc, guild_id: guildId});
+  if (d.status === 'success') {
+    toast('📅 Discord Event erstellt!');
+    document.getElementById('dse-name').value='';
+    document.getElementById('dse-desc').value='';
+    loadDiscordEvents();
+  } else toast(d.message || 'Fehler', 'err');
+}
+
+async function deleteDiscordEvent(id) {
+  if (!confirm('Event löschen?')) return;
+  const d = await api('/api/delete_discord_event', 'POST', {event_id: id});
+  if (d.status === 'success') { toast('Event gelöscht'); loadDiscordEvents(); }
+  else toast(d.message || 'Fehler', 'err');
+}
+
+let bot_guilds = [];
+
+// ===== INIT =====
+async function initAll() {
+  loadStatus(); loadEventStatus(); loadNextSpawn(); loadBrainrots();
+  const srv = await api('/api/get_servers');
+  bot_guilds = (srv.servers||[]).map(s => s.id);
+  const box = document.getElementById('srv-list');
+  if (box && srv.servers.length) {
+    box.innerHTML = srv.servers.map(s => `<div class="srv"><div><div class="sname">${s.name}</div><div class="smem">${s.members} Mitglieder</div></div><div style="font-size:11px;color:#8b949e">${s.id}</div></div>`).join('');
+  }
+}
+initAll();
+setInterval(loadStatus, 8000);
+setInterval(loadEventStatus, 10000);
+setInterval(loadNextSpawn, 30000);
+</script>
+</body>
+</html>

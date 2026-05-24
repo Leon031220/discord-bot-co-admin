@@ -1,6 +1,6 @@
 import discord
 from discord.ext import commands, tasks
-from discord import app_commands
+from discord import app_commands, ui
 import random
 import os
 import asyncio
@@ -48,6 +48,8 @@ ytdl_format_options = {
     'default_search': 'ytsearch',
     'source_address': '0.0.0.0',
     'noprogress': True,
+    'socket_timeout': 30,
+    'extractor_args': {'youtube': {'skip': ['dash', 'hls']}},
 }
 ffmpeg_options = {
     'options': '-vn -loglevel quiet',
@@ -246,6 +248,22 @@ def reset_chat_history(user_id: int):
     if user_id in conversation_history:
         del conversation_history[user_id]
 
+class AdminPanelView(ui.View):
+    def __init__(self):
+        super().__init__()
+    
+    @ui.button(label="Channel ID", style=discord.ButtonStyle.primary)
+    async def channel_button(self, interaction: discord.Interaction, button: ui.Button):
+        await interaction.response.send_message(f"📍 Admin Machine Channel ID: `{ADMIN_MACHINE_CHANNEL_ID}`", ephemeral=True)
+    
+    @ui.button(label="Target Hours", style=discord.ButtonStyle.primary)
+    async def hours_button(self, interaction: discord.Interaction, button: ui.Button):
+        await interaction.response.send_message(f"⏰ Target Hours: `{TARGET_HOURS}`", ephemeral=True)
+    
+    @ui.button(label="Bot Status", style=discord.ButtonStyle.success)
+    async def status_button(self, interaction: discord.Interaction, button: ui.Button):
+        await interaction.response.send_message(f"✅ Bot ist online! Latenz: `{round(interaction.client.latency * 1000)}ms`", ephemeral=True)
+
 @bot.tree.command(name="ping", description="Checkt den Bot")
 async def ping(interaction: discord.Interaction):
     await interaction.response.send_message(f"🏓 Pong! `{round(bot.latency * 1000)}ms`")
@@ -255,6 +273,19 @@ async def adminmachine(interaction: discord.Interaction):
     result = generate_admin_machine()
     embed = create_admin_machine_embed(result)
     await interaction.response.send_message(embed=embed)
+
+@bot.tree.command(name="admin_panel", description="Admin Panel für Bot-Einstellungen")
+async def admin_panel(interaction: discord.Interaction):
+    if not is_admin(interaction):
+        await interaction.response.send_message("❌ Du hast keine Berechtigung!", ephemeral=True)
+        return
+    
+    embed = discord.Embed(title="⚙️ Admin Panel", description="Verwalte die Bot-Einstellungen", color=discord.Color.red())
+    embed.add_field(name="📍 Channel ID", value=f"`{ADMIN_MACHINE_CHANNEL_ID}`", inline=False)
+    embed.add_field(name="⏰ Target Hours", value=f"`{TARGET_HOURS}`", inline=False)
+    embed.add_field(name="✅ Status", value="Bot läuft", inline=False)
+    
+    await interaction.response.send_message(embed=embed, view=AdminPanelView())
 
 @bot.tree.command(name="google", description="Sucht bei Google")
 @app_commands.describe(query="Was möchtest du suchen?")
@@ -306,7 +337,11 @@ async def play(interaction: discord.Interaction, search: str):
             queues[interaction.guild.id].append(player)
             await interaction.followup.send(f"➕ **Zur Queue hinzugefügt:** {player.title}")
     except Exception as e:
-        await interaction.followup.send(f"❌ Fehler: {str(e)}")
+        error_msg = str(e)
+        if "Sign in" in error_msg or "bot" in error_msg.lower():
+            await interaction.followup.send("❌ YouTube blockiert den Bot momentan. Versuche es später nochmal!")
+        else:
+            await interaction.followup.send(f"❌ Fehler: {error_msg[:100]}")
 
 def check_queue(guild_id, voice_client):
     if guild_id in current_songs:
@@ -382,6 +417,7 @@ async def volume(interaction: discord.Interaction, level: int):
 async def help_bot(interaction: discord.Interaction):
     embed = discord.Embed(title="🤖 Co-Admin Bot", color=discord.Color.gold())
     embed.add_field(name="🎰 Admin Machine", value="`/adminmachine` - Zufällige Machine", inline=False)
+    embed.add_field(name="⚙️ Admin", value="`/admin_panel` - Bot-Einstellungen", inline=False)
     embed.add_field(name="🤖 KI & Suche", value="`/google <frage>` - Google Suche\n`/ask <frage>` - KI Chat\n`/reset_chat` - Chat-Verlauf löschen", inline=False)
     embed.add_field(name="🎵 Musik", value="`/play`\n`/skip`\n`/stop`\n`/queue`\n`/pause`\n`/resume`\n`/volume`", inline=False)
     embed.add_field(name="i️ Info", value="`/ping`\n`/help_bot`", inline=False)

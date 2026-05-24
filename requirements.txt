@@ -1,0 +1,6 @@
+discord.py[voice]==2.7.1
+yt-dlp
+PyNaCl
+python-dotenv
+aiohttp
+google-generativeai

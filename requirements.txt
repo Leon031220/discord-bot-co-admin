@@ -4,3 +4,4 @@ PyNaCl
 python-dotenv
 aiohttp
 google-generativeai
+flask
